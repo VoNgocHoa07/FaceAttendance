@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 venv/
+.venv/
 ENV/
 
 # PyInstaller
@@ -23,3 +24,10 @@ Thumbs.db
 
 # Project specific
 *.log
+settings.json
+
+# Data folders (user data - do not commit)
+known_faces/*
+!known_faces/.gitkeep
+attendance_records/*
+!attendance_records/.gitkeep
