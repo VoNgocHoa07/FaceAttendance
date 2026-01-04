@@ -21,18 +21,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install cmake
-          pip install dlib --prefer-binary --find-links https://github.com/z-mahmud22/Dlib_Windows_Python3.x/releases/download/v19.24.99/dlib-19.24.99-cp311-cp311-win_amd64.whl
+          pip install https://github.com/z-mahmud22/Dlib_Windows_Python3.x/releases/download/v19.24.99/dlib-19.24.99-cp310-cp310-win_amd64.whl
           pip install numpy==1.26.4 pandas==2.1.4 opencv-python-headless==4.9.0.80 PySide6==6.6.1 mediapipe==0.10.9 face_recognition==1.3.0 openpyxl==3.1.2 pyinstaller==6.3.0
+
+      - name: Create directories
+        run: |
+          New-Item -ItemType Directory -Force -Path "known_faces"
+          New-Item -ItemType Directory -Force -Path "attendance_records"
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller FaceAttendance.spec
+          pyinstaller --noconfirm --onefile --windowed --name "FaceAttendance" --add-data "Logo;Logo" --add-data "known_faces;known_faces" --add-data "attendance_records;attendance_records" --hidden-import "PySide6.QtCore" --hidden-import "PySide6.QtGui" --hidden-import "PySide6.QtWidgets" --hidden-import "cv2" --hidden-import "mediapipe" --hidden-import "face_recognition" --hidden-import "face_recognition_models" --hidden-import "dlib" --hidden-import "numpy" --hidden-import "pandas" --hidden-import "openpyxl" --collect-all "mediapipe" --collect-all "face_recognition_models" app_main.py
 
       - name: Create ZIP
         run: |
@@ -45,7 +49,7 @@ jobs:
           path: FaceAttendance-Windows.zip
 
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,7 +57,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
@@ -61,14 +65,18 @@ jobs:
           brew install cmake
           pip install numpy==1.26.4 pandas==2.1.4 opencv-python-headless==4.9.0.80 PySide6==6.6.1 mediapipe==0.10.9 dlib==19.24.2 face_recognition==1.3.0 openpyxl==3.1.2 pyinstaller==6.3.0
 
+      - name: Create directories
+        run: |
+          mkdir -p known_faces attendance_records
+
       - name: Build with PyInstaller
         run: |
-          pyinstaller FaceAttendance.spec
+          pyinstaller --noconfirm --onefile --windowed --name "FaceAttendance" --add-data "Logo:Logo" --add-data "known_faces:known_faces" --add-data "attendance_records:attendance_records" --hidden-import "PySide6.QtCore" --hidden-import "PySide6.QtGui" --hidden-import "PySide6.QtWidgets" --hidden-import "cv2" --hidden-import "mediapipe" --hidden-import "face_recognition" --hidden-import "face_recognition_models" --hidden-import "dlib" --hidden-import "numpy" --hidden-import "pandas" --hidden-import "openpyxl" --collect-all "mediapipe" --collect-all "face_recognition_models" app_main.py
 
       - name: Create DMG
         run: |
           mkdir -p dmg_contents
-          cp -R dist/FaceAttendance.app dmg_contents/ 2>/dev/null || cp dist/FaceAttendance dmg_contents/
+          cp dist/FaceAttendance dmg_contents/
           hdiutil create -volname "FaceAttendance" -srcfolder dmg_contents -ov -format UDZO FaceAttendance-macOS.dmg
 
       - name: Upload macOS artifact
@@ -86,7 +94,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Install system dependencies
         run: |
@@ -101,9 +109,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install numpy==1.26.4 pandas==2.1.4 opencv-python-headless==4.9.0.80 PySide6==6.6.1 mediapipe==0.10.9 dlib==19.24.2 face_recognition==1.3.0 openpyxl==3.1.2 pyinstaller==6.3.0
 
+      - name: Create directories
+        run: |
+          mkdir -p known_faces attendance_records
+
       - name: Build with PyInstaller
         run: |
-          pyinstaller FaceAttendance.spec
+          pyinstaller --noconfirm --onefile --name "FaceAttendance" --add-data "Logo:Logo" --add-data "known_faces:known_faces" --add-data "attendance_records:attendance_records" --hidden-import "PySide6.QtCore" --hidden-import "PySide6.QtGui" --hidden-import "PySide6.QtWidgets" --hidden-import "cv2" --hidden-import "mediapipe" --hidden-import "face_recognition" --hidden-import "face_recognition_models" --hidden-import "dlib" --hidden-import "numpy" --hidden-import "pandas" --hidden-import "openpyxl" --collect-all "mediapipe" --collect-all "face_recognition_models" app_main.py
 
       - name: Create tar.gz
         run: |
@@ -146,16 +158,18 @@ jobs:
           tag_name: ${{ steps.version.outputs.version }}
           name: Face Attendance ${{ steps.version.outputs.version }}
           body: |
-            ## 🎉 Face Recognition Attendance System ${{ steps.version.outputs.version }}
+            ## Face Recognition Attendance System ${{ steps.version.outputs.version }}
             
             ### Downloads
-            - **Windows**: `FaceAttendance-Windows.zip` - Extract and run `FaceAttendance.exe`
-            - **macOS**: `FaceAttendance-macOS.dmg` - Mount and drag to Applications
-            - **Linux**: `FaceAttendance-Linux.tar.gz` - Extract and run `./FaceAttendance`
+            | Platform | File | Instructions |
+            |----------|------|--------------|
+            | Windows | `FaceAttendance-Windows.zip` | Extract and run `FaceAttendance.exe` |
+            | macOS | `FaceAttendance-macOS.dmg` | Mount DMG and run FaceAttendance |
+            | Linux | `FaceAttendance-Linux.tar.gz` | Extract and run `./FaceAttendance` |
             
             ### Features
             - Real-time face recognition attendance
-            - Modern dark theme UI
+            - Modern dark theme UI with splash screen
             - Export to Excel/CSV
             - Attendance reports and analytics
             - Multi-session support (Morning/Afternoon/Evening)
