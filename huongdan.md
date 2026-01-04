@@ -5,6 +5,7 @@
 | Hệ điều hành | Link Download |
 |--------------|---------------|
 | **Windows** | https://github.com/VoNgocHoa07/FaceAttendance/releases/latest/download/FaceAttendance_Windows.zip |
+| **macOS** | https://github.com/VoNgocHoa07/FaceAttendance/releases/latest/download/FaceAttendance_macOS.zip |
 | **Linux** | https://github.com/VoNgocHoa07/FaceAttendance/releases/latest/download/FaceAttendance_Linux.tar.gz |
 
 ---
@@ -16,6 +17,12 @@
 2. Giải nén (chuột phải → Extract All)
 3. Mở thư mục → Double-click `FaceAttendance.exe`
 4. Giao diện hiện ra, sử dụng ngay!
+
+### macOS
+1. Tải file `FaceAttendance_macOS.zip`
+2. Giải nén (double-click file zip)
+3. Double-click `FaceAttendance.app`
+4. Nếu bị chặn: System Preferences → Security & Privacy → "Open Anyway"
 
 ### Linux
 ```bash

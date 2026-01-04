@@ -1,4 +1,3 @@
-
 import sys
 import os
 import cv2
@@ -14,14 +13,18 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QScrollArea, QMessageBox, QFrame, QSizePolicy,
                                QFileDialog, QDialog, QTableWidget, QTableWidgetItem,
                                QLineEdit, QComboBox, QGraphicsDropShadowEffect,
-                               QProgressBar, QSpacerItem, QGridLayout, QStackedWidget)
-from PySide6.QtGui import QImage, QPixmap, QFont, QColor, QPainter, QBrush, QPen, QLinearGradient
-from PySide6.QtCore import Qt, QThread, Signal, Slot, QTimer, QPropertyAnimation, QEasingCurve, QRect, Property, QSize
+                               QProgressBar, QSpacerItem, QGridLayout, QStackedWidget,
+                               QSlider, QCheckBox, QTabWidget, QSpinBox, QHeaderView,
+                               QCalendarWidget, QDateEdit)
+from PySide6.QtGui import (QImage, QPixmap, QFont, QColor, QPainter, QBrush, QPen, 
+                           QLinearGradient, QIcon, QPainterPath, QRadialGradient)
+from PySide6.QtCore import (Qt, QThread, Signal, Slot, QTimer, QPropertyAnimation, 
+                            QEasingCurve, QRect, Property, QSize, QDate, QPoint)
 
 from cv_logic import CVLogic
 from auto_capture import AutoCaptureWindow
 
-# ============== MODERN GLASS MORPHISM STYLE ==============
+# ============== ENHANCED MODERN STYLE ==============
 MODERN_STYLE = """
 * {
     font-family: 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', sans-serif;
@@ -29,7 +32,7 @@ MODERN_STYLE = """
 
 QMainWindow {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #667eea, stop:0.5 #764ba2, stop:1 #f093fb);
+        stop:0 #1a1a2e, stop:0.5 #16213e, stop:1 #0f3460);
 }
 
 QWidget#central_widget {
@@ -37,40 +40,60 @@ QWidget#central_widget {
 }
 
 QFrame#glass_card {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 QFrame#sidebar {
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 QFrame#video_frame {
-    background: #1a1a2e;
-    border-radius: 20px;
-    border: 4px solid rgba(102, 126, 234, 0.6);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 24px;
+    border: 3px solid rgba(102, 126, 234, 0.5);
+}
+
+QFrame#left_panel_frame {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 QLabel#app_title {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 800;
     color: #ffffff;
     background: transparent;
     padding: 10px;
 }
 
+QLabel#app_subtitle {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+    background: transparent;
+}
+
 QLabel#section_title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    color: #1e293b;
-    padding: 12px 16px;
+    color: white;
+    padding: 12px 20px;
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
         stop:0 #667eea, stop:1 #764ba2);
-    color: white;
     border-radius: 12px;
+}
+
+QLabel#section_title_dark {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    padding: 8px 0;
+    background: transparent;
 }
 
 QLabel#stat_number {
@@ -86,22 +109,33 @@ QLabel#stat_label {
 }
 
 QLabel#video_label {
-    background: #0f0f1a;
-    border-radius: 16px;
+    background: #0a0a0f;
+    border-radius: 20px;
 }
 
 QLabel#time_label {
-    font-size: 42px;
-    font-weight: 300;
+    font-size: 56px;
+    font-weight: 200;
     color: #ffffff;
     background: transparent;
+    letter-spacing: 2px;
 }
 
 QLabel#date_label {
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.7);
     background: transparent;
+}
+
+QLabel#status_online {
+    font-size: 13px;
+    font-weight: 600;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 QPushButton {
@@ -177,6 +211,19 @@ QPushButton#btn_secondary:hover {
     border-color: #cbd5e1;
 }
 
+QPushButton#btn_glass {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 24px;
+    border-radius: 12px;
+}
+
+QPushButton#btn_glass:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
 QPushButton#btn_icon {
     background: rgba(102, 126, 234, 0.1);
     color: #667eea;
@@ -192,8 +239,49 @@ QPushButton#btn_icon:hover {
     background: rgba(102, 126, 234, 0.2);
 }
 
+QPushButton#btn_icon_dark {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    min-width: 40px;
+    max-width: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+QPushButton#btn_icon_dark:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+QPushButton#nav_btn {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 14px 20px;
+    border-radius: 12px;
+    text-align: left;
+    font-size: 14px;
+}
+
+QPushButton#nav_btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+QPushButton#nav_btn_active {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.3), stop:1 rgba(118, 75, 162, 0.3));
+    color: white;
+    padding: 14px 20px;
+    border-radius: 12px;
+    text-align: left;
+    font-size: 14px;
+    border-left: 3px solid #667eea;
+}
+
 QLineEdit {
-    background: rgba(241, 245, 249, 0.8);
+    background: rgba(241, 245, 249, 0.9);
     border: 2px solid #e2e8f0;
     border-radius: 12px;
     padding: 12px 16px;
@@ -206,8 +294,16 @@ QLineEdit:focus {
     background: white;
 }
 
-QLineEdit::placeholder {
-    color: #94a3b8;
+QLineEdit#search_dark {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 12px 16px 12px 40px;
+}
+
+QLineEdit#search_dark:focus {
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.12);
 }
 
 QScrollArea {
@@ -216,7 +312,7 @@ QScrollArea {
 }
 
 QScrollBar:vertical {
-    background: rgba(241, 245, 249, 0.5);
+    background: rgba(255, 255, 255, 0.05);
     width: 8px;
     border-radius: 4px;
     margin: 4px;
@@ -238,21 +334,36 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 
 QFrame#attendance_card {
     background: white;
-    border-radius: 12px;
+    border-radius: 16px;
     border: 1px solid #e2e8f0;
-    padding: 8px;
 }
 
 QFrame#attendance_card:hover {
     border-color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
+    background: rgba(102, 126, 234, 0.02);
+}
+
+QFrame#attendance_card_dark {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+QFrame#attendance_card_dark:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(102, 126, 234, 0.5);
 }
 
 QFrame#stat_card {
     background: white;
-    border-radius: 16px;
+    border-radius: 20px;
     border: 1px solid #e2e8f0;
-    padding: 16px;
+}
+
+QFrame#stat_card_dark {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 QComboBox {
@@ -302,13 +413,13 @@ QHeaderView::section {
     background: #f8fafc;
     color: #475569;
     font-weight: 600;
-    padding: 12px;
+    padding: 14px;
     border: none;
     border-bottom: 2px solid #e2e8f0;
 }
 
 QProgressBar {
-    background: #e2e8f0;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     height: 8px;
     text-align: center;
@@ -319,149 +430,633 @@ QProgressBar::chunk {
         stop:0 #667eea, stop:1 #764ba2);
     border-radius: 8px;
 }
+
+QSlider::groove:horizontal {
+    background: rgba(255, 255, 255, 0.1);
+    height: 6px;
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    background: #667eea;
+    width: 18px;
+    height: 18px;
+    margin: -6px 0;
+    border-radius: 9px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #7c8cf8;
+}
+
+QTabWidget::pane {
+    border: none;
+    background: transparent;
+}
+
+QTabBar::tab {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 12px 24px;
+    border-radius: 8px;
+    margin-right: 8px;
+}
+
+QTabBar::tab:selected {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea, stop:1 #764ba2);
+    color: white;
+}
+
+QTabBar::tab:hover:!selected {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+QCheckBox {
+    color: white;
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: transparent;
+}
+
+QCheckBox::indicator:checked {
+    background: #667eea;
+    border-color: #667eea;
+}
+
+QSpinBox {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px;
+    color: white;
+}
+
+QCalendarWidget {
+    background: white;
+    border-radius: 12px;
+}
+
+QCalendarWidget QToolButton {
+    color: #1e293b;
+    background: transparent;
+    padding: 8px;
+}
+
+QCalendarWidget QMenu {
+    background: white;
+}
+
+QCalendarWidget QSpinBox {
+    background: white;
+    color: #1e293b;
+}
 """
 
 
-class AnimatedButton(QPushButton):
-    """Button với animation hover effect"""
-    def __init__(self, text="", parent=None):
-        super().__init__(text, parent)
-        self._animation = QPropertyAnimation(self, b"geometry")
-        self._animation.setDuration(100)
-        self._animation.setEasingCurve(QEasingCurve.OutCubic)
-        
-    def enterEvent(self, event):
-        super().enterEvent(event)
-        
-    def leaveEvent(self, event):
-        super().leaveEvent(event)
-
-
-class StatCard(QFrame):
-    """Card hiển thị thống kê"""
-    def __init__(self, icon, value, label, color="#667eea", parent=None):
+class GlowEffect(QGraphicsDropShadowEffect):
+    """Hiệu ứng glow cho các thành phần"""
+    def __init__(self, color="#667eea", blur=30, parent=None):
         super().__init__(parent)
-        self.setObjectName("stat_card")
-        self.setFixedSize(160, 120)
+        self.setBlurRadius(blur)
+        self.setXOffset(0)
+        self.setYOffset(0)
+        self.setColor(QColor(color))
+
+
+class AnimatedStatCard(QFrame):
+    """Card thống kê với animation"""
+    def __init__(self, icon, value, label, color="#667eea", trend=None, parent=None):
+        super().__init__(parent)
+        self.setObjectName("stat_card_dark")
+        self.setFixedSize(180, 140)
+        self.color = color
+        self._value = 0
+        self.target_value = value if isinstance(value, int) else 0
         
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(8)
         
-        # Icon và số
         top_layout = QHBoxLayout()
-        icon_label = QLabel(icon)
-        icon_label.setStyleSheet(f"font-size: 24px; color: {color};")
-        top_layout.addWidget(icon_label)
+        icon_container = QLabel(icon)
+        icon_container.setStyleSheet(f"""
+            font-size: 28px;
+            background: {color}20;
+            padding: 10px;
+            border-radius: 12px;
+        """)
+        top_layout.addWidget(icon_container)
         top_layout.addStretch()
         
-        self.value_label = QLabel(str(value))
-        self.value_label.setStyleSheet(f"font-size: 32px; font-weight: 800; color: {color};")
-        
-        self.text_label = QLabel(label)
-        self.text_label.setStyleSheet("font-size: 13px; font-weight: 500; color: #64748b;")
+        if trend:
+            trend_label = QLabel(trend)
+            trend_color = "#10b981" if "+" in trend else "#ef4444"
+            trend_label.setStyleSheet(f"""
+                font-size: 12px;
+                font-weight: 600;
+                color: {trend_color};
+                background: {trend_color}15;
+                padding: 4px 8px;
+                border-radius: 6px;
+            """)
+            top_layout.addWidget(trend_label)
         
         layout.addLayout(top_layout)
+        
+        self.value_label = QLabel(str(value))
+        self.value_label.setStyleSheet(f"""
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+        """)
         layout.addWidget(self.value_label)
+        
+        self.text_label = QLabel(label)
+        self.text_label.setStyleSheet("font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.6);")
         layout.addWidget(self.text_label)
         
-        # Shadow effect
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(20)
+        shadow.setBlurRadius(30)
         shadow.setXOffset(0)
-        shadow.setYOffset(4)
-        shadow.setColor(QColor(0, 0, 0, 25))
+        shadow.setYOffset(10)
+        shadow.setColor(QColor(0, 0, 0, 50))
         self.setGraphicsEffect(shadow)
         
     def update_value(self, value):
         self.value_label.setText(str(value))
 
+    def animate_value(self, target):
+        self.target_value = target
+        self.animation_timer = QTimer()
+        self.animation_timer.timeout.connect(self._animate_step)
+        self.animation_timer.start(30)
+    
+    def _animate_step(self):
+        if self._value < self.target_value:
+            self._value += max(1, (self.target_value - self._value) // 5)
+            self.value_label.setText(str(self._value))
+        else:
+            self._value = self.target_value
+            self.value_label.setText(str(self._value))
+            self.animation_timer.stop()
 
-class AttendanceCard(QFrame):
-    """Card hiển thị thông tin điểm danh"""
+
+class ModernAttendanceCard(QFrame):
+    """Card điểm danh hiện đại"""
     edit_clicked = Signal(str)
     delete_clicked = Signal(str)
     
-    def __init__(self, name, time, session, parent=None):
+    def __init__(self, name, time, session, avatar_color=None, parent=None):
         super().__init__(parent)
         self.name = name
-        self.setObjectName("attendance_card")
-        self.setFixedHeight(70)
+        self.setObjectName("attendance_card_dark")
+        self.setFixedHeight(80)
+        self.setCursor(Qt.PointingHandCursor)
+        
+        colors = ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+        self.avatar_color = avatar_color or colors[hash(name) % len(colors)]
         
         layout = QHBoxLayout(self)
         layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(12)
+        layout.setSpacing(14)
         
-        # Avatar
-        avatar = QLabel("👤")
-        avatar.setStyleSheet("""
-            font-size: 24px;
+        avatar_label = QLabel(name[0].upper() if name else "?")
+        avatar_label.setAlignment(Qt.AlignCenter)
+        avatar_label.setFixedSize(50, 50)
+        avatar_label.setStyleSheet(f"""
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
             background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                stop:0 #667eea, stop:1 #764ba2);
-            border-radius: 20px;
-            padding: 8px;
-            min-width: 40px;
-            max-width: 40px;
-            min-height: 40px;
-            max-height: 40px;
+                stop:0 {self.avatar_color}, stop:1 {self.avatar_color}cc);
+            border-radius: 25px;
         """)
-        avatar.setAlignment(Qt.AlignCenter)
-        layout.addWidget(avatar)
+        layout.addWidget(avatar_label)
         
-        # Info
         info_layout = QVBoxLayout()
-        info_layout.setSpacing(2)
+        info_layout.setSpacing(4)
         
         name_label = QLabel(name)
-        name_label.setStyleSheet("font-size: 15px; font-weight: 600; color: #1e293b;")
+        name_label.setStyleSheet("font-size: 15px; font-weight: 600; color: white;")
         
-        time_label = QLabel(f"🕐 {time} • {session}")
-        time_label.setStyleSheet("font-size: 12px; color: #64748b;")
+        detail_label = QLabel(f"🕐 {time}  •  {session}")
+        detail_label.setStyleSheet("font-size: 12px; color: rgba(255,255,255,0.5);")
         
         info_layout.addWidget(name_label)
-        info_layout.addWidget(time_label)
+        info_layout.addWidget(detail_label)
         layout.addLayout(info_layout, 1)
         
-        # Status badge
-        status = QLabel("✓")
-        status.setStyleSheet("""
-            background: #10b981;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
+        status_badge = QLabel("✓ Present")
+        status_badge.setStyleSheet("""
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            font-size: 11px;
+            font-weight: 600;
             padding: 6px 12px;
-            border-radius: 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         """)
-        layout.addWidget(status)
+        layout.addWidget(status_badge)
         
-        # Actions
+        btn_container = QHBoxLayout()
+        btn_container.setSpacing(6)
+        
         btn_edit = QPushButton("✏️")
-        btn_edit.setObjectName("btn_icon")
+        btn_edit.setObjectName("btn_icon_dark")
         btn_edit.setFixedSize(36, 36)
         btn_edit.clicked.connect(lambda: self.edit_clicked.emit(self.name))
         
         btn_del = QPushButton("🗑️")
-        btn_del.setObjectName("btn_icon")
+        btn_del.setObjectName("btn_icon_dark")
         btn_del.setFixedSize(36, 36)
         btn_del.setStyleSheet("""
             QPushButton {
-                background: rgba(239, 68, 68, 0.1);
+                background: rgba(239, 68, 68, 0.15);
                 color: #ef4444;
                 border-radius: 10px;
+                border: 1px solid rgba(239, 68, 68, 0.2);
             }
             QPushButton:hover {
-                background: rgba(239, 68, 68, 0.2);
+                background: rgba(239, 68, 68, 0.25);
             }
         """)
         btn_del.clicked.connect(lambda: self.delete_clicked.emit(self.name))
         
-        layout.addWidget(btn_edit)
-        layout.addWidget(btn_del)
+        btn_container.addWidget(btn_edit)
+        btn_container.addWidget(btn_del)
+        layout.addLayout(btn_container)
+
+
+class QuickActionButton(QPushButton):
+    """Nút hành động nhanh với icon và label"""
+    def __init__(self, icon, text, color="#667eea", parent=None):
+        super().__init__(parent)
+        self.setFixedSize(100, 90)
+        self.setCursor(Qt.PointingHandCursor)
+        
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(8)
+        
+        icon_label = QLabel(icon)
+        icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setStyleSheet("font-size: 28px; background: transparent;")
+        
+        text_label = QLabel(text)
+        text_label.setAlignment(Qt.AlignCenter)
+        text_label.setStyleSheet("font-size: 11px; font-weight: 600; color: white; background: transparent;")
+        
+        layout.addWidget(icon_label)
+        layout.addWidget(text_label)
+        
+        self.setStyleSheet(f"""
+            QPushButton {{
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 16px;
+            }}
+            QPushButton:hover {{
+                background: {color}30;
+                border-color: {color}50;
+            }}
+            QPushButton:pressed {{
+                background: {color}40;
+            }}
+        """)
+
+
+class SettingsDialog(QDialog):
+    """Dialog cài đặt"""
+    settings_changed = Signal(dict)
+    
+    def __init__(self, current_settings, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("⚙️ Settings")
+        self.setStyleSheet(MODERN_STYLE + """
+            QDialog {
+                background: #1a1a2e;
+            }
+        """)
+        self.setMinimumSize(500, 600)
+        self.settings = current_settings.copy()
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
+        
+        header = QLabel("⚙️ Settings")
+        header.setStyleSheet("font-size: 28px; font-weight: bold; color: white;")
+        layout.addWidget(header)
+        
+        tabs = QTabWidget()
+        tabs.addTab(self.create_recognition_tab(), "🎯 Recognition")
+        tabs.addTab(self.create_display_tab(), "🎨 Display")
+        tabs.addTab(self.create_notification_tab(), "🔔 Notifications")
+        layout.addWidget(tabs)
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        
+        btn_cancel = QPushButton("Cancel")
+        btn_cancel.setObjectName("btn_secondary")
+        btn_cancel.clicked.connect(self.reject)
+        
+        btn_save = QPushButton("💾 Save Settings")
+        btn_save.setObjectName("btn_primary")
+        btn_save.clicked.connect(self.save_settings)
+        
+        btn_layout.addWidget(btn_cancel)
+        btn_layout.addWidget(btn_save)
+        layout.addLayout(btn_layout)
+    
+    def create_recognition_tab(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(20)
+        
+        tolerance_group = QFrame()
+        tolerance_group.setStyleSheet("background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;")
+        tg_layout = QVBoxLayout(tolerance_group)
+        
+        tg_header = QHBoxLayout()
+        tg_label = QLabel("Recognition Tolerance")
+        tg_label.setStyleSheet("font-size: 14px; font-weight: 600; color: white;")
+        self.tolerance_value = QLabel(f"{self.settings.get('tolerance', 0.35)}")
+        self.tolerance_value.setStyleSheet("font-size: 14px; color: #667eea;")
+        tg_header.addWidget(tg_label)
+        tg_header.addStretch()
+        tg_header.addWidget(self.tolerance_value)
+        tg_layout.addLayout(tg_header)
+        
+        self.tolerance_slider = QSlider(Qt.Horizontal)
+        self.tolerance_slider.setRange(20, 60)
+        self.tolerance_slider.setValue(int(self.settings.get('tolerance', 0.35) * 100))
+        self.tolerance_slider.valueChanged.connect(lambda v: self.tolerance_value.setText(f"{v/100:.2f}"))
+        tg_layout.addWidget(self.tolerance_slider)
+        
+        tg_desc = QLabel("Lower = stricter matching (less false positives)\nHigher = more lenient (may have false positives)")
+        tg_desc.setStyleSheet("font-size: 12px; color: rgba(255,255,255,0.5);")
+        tg_layout.addWidget(tg_desc)
+        
+        layout.addWidget(tolerance_group)
+        
+        confirm_group = QFrame()
+        confirm_group.setStyleSheet("background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px;")
+        cg_layout = QVBoxLayout(confirm_group)
+        
+        cg_header = QHBoxLayout()
+        cg_label = QLabel("Confirmation Frames")
+        cg_label.setStyleSheet("font-size: 14px; font-weight: 600; color: white;")
+        self.confirm_spin = QSpinBox()
+        self.confirm_spin.setRange(1, 10)
+        self.confirm_spin.setValue(self.settings.get('confirmation_count', 3))
+        cg_header.addWidget(cg_label)
+        cg_header.addStretch()
+        cg_header.addWidget(self.confirm_spin)
+        cg_layout.addLayout(cg_header)
+        
+        cg_desc = QLabel("Number of consecutive frames needed to confirm identity")
+        cg_desc.setStyleSheet("font-size: 12px; color: rgba(255,255,255,0.5);")
+        cg_layout.addWidget(cg_desc)
+        
+        layout.addWidget(confirm_group)
+        layout.addStretch()
+        
+        return widget
+    
+    def create_display_tab(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(20)
+        
+        self.show_fps = QCheckBox("Show FPS counter")
+        self.show_fps.setChecked(self.settings.get('show_fps', False))
+        layout.addWidget(self.show_fps)
+        
+        self.show_confidence = QCheckBox("Show confidence score")
+        self.show_confidence.setChecked(self.settings.get('show_confidence', True))
+        layout.addWidget(self.show_confidence)
+        
+        self.dark_mode = QCheckBox("Dark mode video overlay")
+        self.dark_mode.setChecked(self.settings.get('dark_overlay', True))
+        layout.addWidget(self.dark_mode)
+        
+        layout.addStretch()
+        return widget
+    
+    def create_notification_tab(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setSpacing(20)
+        
+        self.sound_enabled = QCheckBox("Enable sound notifications")
+        self.sound_enabled.setChecked(self.settings.get('sound_enabled', True))
+        layout.addWidget(self.sound_enabled)
+        
+        self.toast_enabled = QCheckBox("Show toast notifications")
+        self.toast_enabled.setChecked(self.settings.get('toast_enabled', True))
+        layout.addWidget(self.toast_enabled)
+        
+        layout.addStretch()
+        return widget
+    
+    def save_settings(self):
+        self.settings = {
+            'tolerance': self.tolerance_slider.value() / 100,
+            'confirmation_count': self.confirm_spin.value(),
+            'show_fps': self.show_fps.isChecked(),
+            'show_confidence': self.show_confidence.isChecked(),
+            'dark_overlay': self.dark_mode.isChecked(),
+            'sound_enabled': self.sound_enabled.isChecked(),
+            'toast_enabled': self.toast_enabled.isChecked(),
+        }
+        self.settings_changed.emit(self.settings)
+        self.accept()
+
+
+class ReportDialog(QDialog):
+    """Dialog báo cáo thống kê"""
+    def __init__(self, master_file, parent=None):
+        super().__init__(parent)
+        self.master_file = master_file
+        self.setWindowTitle("📊 Attendance Report")
+        self.setStyleSheet(MODERN_STYLE + """
+            QDialog {
+                background: #1a1a2e;
+            }
+        """)
+        self.setMinimumSize(900, 700)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
+        
+        header = QLabel("📊 Attendance Analytics")
+        header.setStyleSheet("font-size: 28px; font-weight: bold; color: white;")
+        layout.addWidget(header)
+        
+        filter_layout = QHBoxLayout()
+        
+        filter_layout.addWidget(QLabel("📅 From:"))
+        self.date_from = QDateEdit()
+        self.date_from.setDate(QDate.currentDate().addDays(-30))
+        self.date_from.setCalendarPopup(True)
+        filter_layout.addWidget(self.date_from)
+        
+        filter_layout.addWidget(QLabel("To:"))
+        self.date_to = QDateEdit()
+        self.date_to.setDate(QDate.currentDate())
+        self.date_to.setCalendarPopup(True)
+        filter_layout.addWidget(self.date_to)
+        
+        btn_filter = QPushButton("🔍 Apply Filter")
+        btn_filter.setObjectName("btn_primary")
+        btn_filter.clicked.connect(self.apply_filter)
+        filter_layout.addWidget(btn_filter)
+        
+        filter_layout.addStretch()
+        layout.addLayout(filter_layout)
+        
+        stats_layout = QHBoxLayout()
+        self.stat_cards = {}
+        
+        for icon, key, label, color in [
+            ("📊", "total", "Total Records", "#667eea"),
+            ("👥", "unique", "Unique People", "#10b981"),
+            ("📈", "avg", "Avg per Day", "#f59e0b"),
+            ("🏆", "best", "Best Day", "#8b5cf6"),
+        ]:
+            card = AnimatedStatCard(icon, 0, label, color)
+            self.stat_cards[key] = card
+            stats_layout.addWidget(card)
+        
+        stats_layout.addStretch()
+        layout.addLayout(stats_layout)
+        
+        self.table = QTableWidget()
+        self.table.setStyleSheet("""
+            QTableWidget {
+                background: rgba(255,255,255,0.05);
+                border-radius: 12px;
+                gridline-color: rgba(255,255,255,0.1);
+            }
+            QTableWidget::item {
+                color: white;
+                padding: 10px;
+            }
+            QHeaderView::section {
+                background: rgba(102, 126, 234, 0.3);
+                color: white;
+                font-weight: 600;
+                padding: 12px;
+                border: none;
+            }
+        """)
+        layout.addWidget(self.table)
+        
+        btn_layout = QHBoxLayout()
+        
+        btn_export_pdf = QPushButton("📄 Export PDF")
+        btn_export_pdf.setObjectName("btn_warning")
+        btn_export_pdf.clicked.connect(self.export_pdf)
+        
+        btn_export_excel = QPushButton("📊 Export Excel")
+        btn_export_excel.setObjectName("btn_success")
+        btn_export_excel.clicked.connect(self.export_excel)
+        
+        btn_close = QPushButton("Close")
+        btn_close.setObjectName("btn_secondary")
+        btn_close.clicked.connect(self.close)
+        
+        btn_layout.addWidget(btn_export_pdf)
+        btn_layout.addWidget(btn_export_excel)
+        btn_layout.addStretch()
+        btn_layout.addWidget(btn_close)
+        layout.addLayout(btn_layout)
+        
+        self.load_data()
+    
+    def load_data(self):
+        try:
+            if os.path.exists(self.master_file):
+                self.df = pd.read_csv(self.master_file)
+                self.apply_filter()
+            else:
+                self.df = pd.DataFrame()
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to load data: {e}")
+    
+    def apply_filter(self):
+        if self.df.empty:
+            return
+            
+        try:
+            df = self.df.copy()
+            df['Attendance Date'] = pd.to_datetime(df['Attendance Date'])
+            
+            date_from = self.date_from.date().toPython()
+            date_to = self.date_to.date().toPython()
+            
+            mask = (df['Attendance Date'].dt.date >= date_from) & (df['Attendance Date'].dt.date <= date_to)
+            filtered = df[mask]
+            
+            self.stat_cards['total'].update_value(len(filtered))
+            self.stat_cards['unique'].update_value(filtered['Name'].nunique() if not filtered.empty else 0)
+            
+            if not filtered.empty:
+                daily_counts = filtered.groupby(filtered['Attendance Date'].dt.date).size()
+                self.stat_cards['avg'].update_value(f"{daily_counts.mean():.1f}")
+                self.stat_cards['best'].update_value(daily_counts.max())
+            
+            self.table.setColumnCount(len(df.columns))
+            self.table.setHorizontalHeaderLabels(list(df.columns))
+            self.table.setRowCount(len(filtered))
+            
+            for r, row in enumerate(filtered.itertuples(index=False)):
+                for c, val in enumerate(row):
+                    item = QTableWidgetItem(str(val))
+                    item.setForeground(QColor("white"))
+                    self.table.setItem(r, c, item)
+            
+            self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            
+        except Exception as e:
+            print(f"Filter error: {e}")
+    
+    def export_pdf(self):
+        QMessageBox.information(self, "Export PDF", 
+            "PDF export requires additional libraries.\nPlease use Excel export instead.")
+    
+    def export_excel(self):
+        if self.df.empty:
+            QMessageBox.information(self, "No Data", "No data to export.")
+            return
+            
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export Report", 
+            f"attendance_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            "Excel Files (*.xlsx)")
+        
+        if file_path:
+            try:
+                self.df.to_excel(file_path, index=False)
+                QMessageBox.information(self, "Success", f"Report exported to {file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Export failed: {e}")
 
 
 class Worker(QThread):
     ImageUpdate = Signal(QImage, list)
     FaceDetected = Signal(int)
+    FPSUpdate = Signal(float)
 
     def __init__(self, cv_logic):
         super().__init__()
@@ -470,6 +1065,8 @@ class Worker(QThread):
         self.cap = cv2.VideoCapture(0)
         self.frame_count = 0
         self.reload_data_flag = False
+        self.fps_counter = 0
+        self.fps_time = time.time()
 
     def run(self):
         while self.running:
@@ -487,7 +1084,12 @@ class Worker(QThread):
             results = self.cv_logic.process_frame_with_tracking(rgb_frame, self.frame_count)
             self.frame_count += 1
             
-            # Emit số lượng khuôn mặt detected
+            self.fps_counter += 1
+            if time.time() - self.fps_time >= 1.0:
+                self.FPSUpdate.emit(self.fps_counter)
+                self.fps_counter = 0
+                self.fps_time = time.time()
+            
             self.FaceDetected.emit(len(results))
 
             h, w, ch = frame.shape
@@ -509,7 +1111,6 @@ class MainWindow(QMainWindow):
 
         screen_width = screen_geometry.width()
         screen_height = screen_geometry.height()
-
         self.setGeometry(0, 0, screen_width, screen_height - 50)
 
         self.cv_logic = CVLogic()
@@ -519,13 +1120,42 @@ class MainWindow(QMainWindow):
         os.makedirs(self.records_folder, exist_ok=True)
         self.master_file = os.path.join(self.records_folder, "attendance_master.csv")
         
+        self.settings = {
+            'tolerance': 0.35,
+            'confirmation_count': 3,
+            'show_fps': True,
+            'show_confidence': True,
+            'dark_overlay': True,
+            'sound_enabled': True,
+            'toast_enabled': True,
+        }
+        self.load_settings()
+        
         if not os.path.exists(self.master_file):
             pd.DataFrame(columns=["Name", "Check-in Datetime", "Attendance Date", "Session"]).to_csv(
                 self.master_file, index=False, encoding="utf-8-sig")
 
+        self.current_fps = 0
         self.init_ui()
         self.init_worker()
         self.start_clock()
+        
+    def load_settings(self):
+        settings_file = os.path.join(os.getcwd(), "settings.json")
+        if os.path.exists(settings_file):
+            try:
+                with open(settings_file, 'r') as f:
+                    self.settings.update(json.load(f))
+            except:
+                pass
+    
+    def save_settings_to_file(self):
+        settings_file = os.path.join(os.getcwd(), "settings.json")
+        try:
+            with open(settings_file, 'w') as f:
+                json.dump(self.settings, f, indent=2)
+        except:
+            pass
 
     def init_ui(self):
         central = QWidget()
@@ -533,70 +1163,149 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central)
         
         main_layout = QHBoxLayout(central)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # ============== LEFT PANEL (Video + Stats) ==============
-        left_panel = QVBoxLayout()
-        left_panel.setSpacing(16)
+        # ============== LEFT NAV ==============
+        nav_frame = QFrame()
+        nav_frame.setFixedWidth(70)
+        nav_frame.setStyleSheet("background: rgba(0,0,0,0.3);")
+        nav_layout = QVBoxLayout(nav_frame)
+        nav_layout.setContentsMargins(10, 20, 10, 20)
+        nav_layout.setSpacing(10)
+        
+        logo = QLabel("🎯")
+        logo.setStyleSheet("font-size: 32px; background: transparent;")
+        logo.setAlignment(Qt.AlignCenter)
+        nav_layout.addWidget(logo)
+        nav_layout.addSpacing(30)
+        
+        nav_buttons = [
+            ("🏠", "Home", self.show_home),
+            ("📊", "Reports", self.show_reports),
+            ("👥", "Members", self.show_members_dialog),
+            ("⚙️", "Settings", self.show_settings),
+        ]
+        
+        self.nav_btns = []
+        for icon, tooltip, callback in nav_buttons:
+            btn = QPushButton(icon)
+            btn.setObjectName("btn_icon_dark")
+            btn.setFixedSize(50, 50)
+            btn.setToolTip(tooltip)
+            btn.clicked.connect(callback)
+            nav_layout.addWidget(btn, alignment=Qt.AlignCenter)
+            self.nav_btns.append(btn)
+        
+        nav_layout.addStretch()
+        
+        btn_quit = QPushButton("🚪")
+        btn_quit.setObjectName("btn_icon_dark")
+        btn_quit.setFixedSize(50, 50)
+        btn_quit.setToolTip("Exit")
+        btn_quit.setStyleSheet("""
+            QPushButton {
+                background: rgba(239, 68, 68, 0.2);
+                color: #ef4444;
+                border-radius: 12px;
+                border: 1px solid rgba(239, 68, 68, 0.3);
+            }
+            QPushButton:hover {
+                background: rgba(239, 68, 68, 0.3);
+            }
+        """)
+        btn_quit.clicked.connect(self.close)
+        nav_layout.addWidget(btn_quit, alignment=Qt.AlignCenter)
+        
+        main_layout.addWidget(nav_frame)
 
-        # Header với time
+        # ============== MAIN CONTENT ==============
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(30, 20, 30, 20)
+        content_layout.setSpacing(20)
+
+        # Header
         header = QHBoxLayout()
         
-        # App title
-        title = QLabel("🎯 Face Attendance")
+        title_layout = QVBoxLayout()
+        title = QLabel("Face Attendance")
         title.setObjectName("app_title")
-        header.addWidget(title)
+        subtitle = QLabel("Real-time face recognition attendance system")
+        subtitle.setObjectName("app_subtitle")
+        title_layout.addWidget(title)
+        title_layout.addWidget(subtitle)
+        header.addLayout(title_layout)
         
         header.addStretch()
         
-        # Clock
+        self.status_label = QLabel("● System Online")
+        self.status_label.setObjectName("status_online")
+        header.addWidget(self.status_label)
+        
+        header.addSpacing(20)
+        
         clock_layout = QVBoxLayout()
         clock_layout.setAlignment(Qt.AlignRight)
         self.time_label = QLabel("00:00:00")
         self.time_label.setObjectName("time_label")
-        self.date_label = QLabel("Thursday, Nov 28, 2025")
+        self.date_label = QLabel("Loading...")
         self.date_label.setObjectName("date_label")
         clock_layout.addWidget(self.time_label)
         clock_layout.addWidget(self.date_label)
         header.addLayout(clock_layout)
         
-        left_panel.addLayout(header)
+        content_layout.addLayout(header)
 
-        # Video Frame
+        # Main Body
+        body_layout = QHBoxLayout()
+        body_layout.setSpacing(20)
+
+        # Left - Video Section
+        video_section = QVBoxLayout()
+        video_section.setSpacing(16)
+        
         video_container = QFrame()
         video_container.setObjectName("video_frame")
-        video_layout = QVBoxLayout(video_container)
-        video_layout.setContentsMargins(8, 8, 8, 8)
+        video_inner = QVBoxLayout(video_container)
+        video_inner.setContentsMargins(12, 12, 12, 12)
         
         self.video_label = QLabel()
         self.video_label.setObjectName("video_label")
         self.video_label.setAlignment(Qt.AlignCenter)
         self.video_label.setMinimumSize(800, 500)
-        self.video_label.setStyleSheet("background: #0f0f1a; border-radius: 12px;")
-        video_layout.addWidget(self.video_label)
+        video_inner.addWidget(self.video_label)
         
-        # Video overlay info
-        self.face_count_label = QLabel("👥 0 faces detected")
+        video_info = QHBoxLayout()
+        
+        self.face_count_label = QLabel("👥 0 faces")
         self.face_count_label.setStyleSheet("""
-            font-size: 14px;
-            color: rgba(255,255,255,0.8);
-            background: rgba(0,0,0,0.5);
-            padding: 8px 16px;
+            font-size: 13px; color: rgba(255,255,255,0.8);
+            background: rgba(0,0,0,0.4); padding: 8px 16px;
             border-radius: 8px;
         """)
-        video_layout.addWidget(self.face_count_label, alignment=Qt.AlignCenter)
+        video_info.addWidget(self.face_count_label)
         
-        left_panel.addWidget(video_container, 1)
+        video_info.addStretch()
+        
+        self.fps_label = QLabel("FPS: --")
+        self.fps_label.setStyleSheet("""
+            font-size: 13px; color: rgba(255,255,255,0.8);
+            background: rgba(0,0,0,0.4); padding: 8px 16px;
+            border-radius: 8px;
+        """)
+        video_info.addWidget(self.fps_label)
+        
+        video_inner.addLayout(video_info)
+        video_section.addWidget(video_container, 1)
 
         # Stats Row
         stats_layout = QHBoxLayout()
         stats_layout.setSpacing(16)
         
-        self.stat_total = StatCard("👥", self.get_total_members(), "Total Members", "#667eea")
-        self.stat_today = StatCard("📅", len(self.attendance_list), "Today", "#10b981")
-        self.stat_week = StatCard("📊", self.get_week_attendance(), "This Week", "#f59e0b")
-        self.stat_rate = StatCard("📈", f"{self.get_attendance_rate()}%", "Rate", "#8b5cf6")
+        self.stat_total = AnimatedStatCard("👥", self.get_total_members(), "Members", "#667eea", "+2")
+        self.stat_today = AnimatedStatCard("✅", len(self.attendance_list), "Today", "#10b981")
+        self.stat_week = AnimatedStatCard("📊", self.get_week_attendance(), "This Week", "#f59e0b")
+        self.stat_rate = AnimatedStatCard("📈", f"{self.get_attendance_rate()}%", "Rate", "#8b5cf6")
         
         stats_layout.addWidget(self.stat_total)
         stats_layout.addWidget(self.stat_today)
@@ -604,82 +1313,69 @@ class MainWindow(QMainWindow):
         stats_layout.addWidget(self.stat_rate)
         stats_layout.addStretch()
         
-        left_panel.addLayout(stats_layout)
-        
-        main_layout.addLayout(left_panel, 2)
+        video_section.addLayout(stats_layout)
+        body_layout.addLayout(video_section, 2)
 
-        # ============== RIGHT PANEL (Sidebar) ==============
+        # Right - Sidebar
         sidebar = QFrame()
-        sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(400)
+        sidebar.setObjectName("left_panel_frame")
+        sidebar.setFixedWidth(380)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(20, 20, 20, 20)
         sidebar_layout.setSpacing(16)
 
-        # Control Section
-        control_title = QLabel("⚡ Quick Actions")
-        control_title.setObjectName("section_title")
-        sidebar_layout.addWidget(control_title)
-
-        # Action Buttons Grid
-        btn_grid = QGridLayout()
-        btn_grid.setSpacing(12)
+        # Quick Actions
+        actions_title = QLabel("⚡ Quick Actions")
+        actions_title.setObjectName("section_title_dark")
+        sidebar_layout.addWidget(actions_title)
         
-        btn_add = QPushButton("➕ Add Person")
-        btn_add.setObjectName("btn_primary")
-        btn_add.setFixedHeight(50)
+        actions_grid = QGridLayout()
+        actions_grid.setSpacing(12)
+        
+        btn_add = QuickActionButton("➕", "Add Person", "#667eea")
         btn_add.clicked.connect(self.add_new_person)
         
-        btn_reset = QPushButton("🔄 Reset")
-        btn_reset.setObjectName("btn_warning")
-        btn_reset.setFixedHeight(50)
+        btn_reset = QuickActionButton("🔄", "Reset", "#f59e0b")
         btn_reset.clicked.connect(self.reset_attendance)
         
-        btn_export = QPushButton("📤 Export")
-        btn_export.setObjectName("btn_success")
-        btn_export.setFixedHeight(50)
+        btn_export = QuickActionButton("📤", "Export", "#10b981")
         btn_export.clicked.connect(self.export_attendance_excel)
         
-        btn_history = QPushButton("📋 History")
-        btn_history.setObjectName("btn_secondary")
-        btn_history.setFixedHeight(50)
+        btn_history = QuickActionButton("📋", "History", "#8b5cf6")
         btn_history.clicked.connect(self.open_master_list)
         
-        btn_grid.addWidget(btn_add, 0, 0)
-        btn_grid.addWidget(btn_reset, 0, 1)
-        btn_grid.addWidget(btn_export, 1, 0)
-        btn_grid.addWidget(btn_history, 1, 1)
+        actions_grid.addWidget(btn_add, 0, 0)
+        actions_grid.addWidget(btn_reset, 0, 1)
+        actions_grid.addWidget(btn_export, 0, 2)
+        actions_grid.addWidget(btn_history, 0, 3)
         
-        sidebar_layout.addLayout(btn_grid)
+        sidebar_layout.addLayout(actions_grid)
 
         # Search
-        search_layout = QHBoxLayout()
+        search_container = QHBoxLayout()
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("🔍 Search attendee...")
+        self.search_input.setObjectName("search_dark")
+        self.search_input.setPlaceholderText("Search attendee...")
         self.search_input.textChanged.connect(self.filter_attendance)
-        search_layout.addWidget(self.search_input)
-        sidebar_layout.addLayout(search_layout)
+        search_container.addWidget(self.search_input)
+        sidebar_layout.addLayout(search_container)
 
-        # Attendance List Title
+        # Attendance List
         list_header = QHBoxLayout()
         list_title = QLabel("📋 Today's Attendance")
-        list_title.setObjectName("section_title")
+        list_title.setObjectName("section_title_dark")
         list_header.addWidget(list_title)
+        list_header.addStretch()
         
         self.attendance_count = QLabel("0")
         self.attendance_count.setStyleSheet("""
-            background: #667eea;
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            padding: 4px 12px;
-            border-radius: 12px;
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #667eea, stop:1 #764ba2);
+            color: white; font-size: 13px; font-weight: bold;
+            padding: 4px 12px; border-radius: 10px;
         """)
         list_header.addWidget(self.attendance_count)
-        
         sidebar_layout.addLayout(list_header)
 
-        # Attendance Scroll Area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
@@ -687,57 +1383,35 @@ class MainWindow(QMainWindow):
         self.attendance_widget = QWidget()
         self.attendance_layout = QVBoxLayout(self.attendance_widget)
         self.attendance_layout.setAlignment(Qt.AlignTop)
-        self.attendance_layout.setSpacing(8)
+        self.attendance_layout.setSpacing(10)
         self.attendance_layout.setContentsMargins(0, 0, 0, 0)
         scroll.setWidget(self.attendance_widget)
         
         sidebar_layout.addWidget(scroll, 1)
 
-        # Bottom buttons
-        bottom_layout = QHBoxLayout()
+        body_layout.addWidget(sidebar)
+        content_layout.addLayout(body_layout, 1)
         
-        btn_members = QPushButton("👥 Members")
-        btn_members.setObjectName("btn_secondary")
-        btn_members.clicked.connect(self.show_members_dialog)
-        
-        btn_quit = QPushButton("🚪 Exit")
-        btn_quit.setObjectName("btn_danger")
-        btn_quit.clicked.connect(self.close)
-        
-        bottom_layout.addWidget(btn_members)
-        bottom_layout.addWidget(btn_quit)
-        
-        sidebar_layout.addLayout(bottom_layout)
+        main_layout.addLayout(content_layout, 1)
 
-        # Shadow effect cho sidebar
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(30)
-        shadow.setXOffset(-5)
-        shadow.setYOffset(0)
-        shadow.setColor(QColor(0, 0, 0, 40))
-        sidebar.setGraphicsEffect(shadow)
-
-        main_layout.addWidget(sidebar)
-
-        # Success overlay (hidden by default)
+        # Success Overlay
         self.success_overlay = QLabel(self.video_label)
         self.success_overlay.setAlignment(Qt.AlignCenter)
         self.success_overlay.setStyleSheet("""
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
+            font-size: 18px; font-weight: bold; color: white;
             background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
                 stop:0 rgba(16, 185, 129, 0.95), stop:1 rgba(5, 150, 105, 0.95));
-            padding: 16px 32px;
-            border-radius: 12px;
+            padding: 16px 32px; border-radius: 16px;
+            border: 2px solid rgba(255,255,255,0.2);
         """)
-        self.success_overlay.setFixedSize(400, 60)
+        self.success_overlay.setFixedSize(420, 70)
         self.success_overlay.hide()
 
     def init_worker(self):
         self.worker = Worker(self.cv_logic)
         self.worker.ImageUpdate.connect(self.update_frame)
         self.worker.FaceDetected.connect(self.update_face_count)
+        self.worker.FPSUpdate.connect(self.update_fps)
         self.worker.start()
 
     def start_clock(self):
@@ -749,7 +1423,16 @@ class MainWindow(QMainWindow):
     def update_clock(self):
         now = datetime.now()
         self.time_label.setText(now.strftime("%H:%M:%S"))
-        self.date_label.setText(now.strftime("%A, %b %d, %Y"))
+        self.date_label.setText(now.strftime("%A, %B %d, %Y"))
+
+    @Slot(float)
+    def update_fps(self, fps):
+        self.current_fps = fps
+        if self.settings.get('show_fps', True):
+            self.fps_label.setText(f"FPS: {int(fps)}")
+            self.fps_label.show()
+        else:
+            self.fps_label.hide()
 
     def get_total_members(self):
         known_dir = os.path.join(os.getcwd(), "known_faces")
@@ -806,12 +1489,11 @@ class MainWindow(QMainWindow):
         frame_to_draw = arr.copy()
 
         for (top, right, bottom, left), display_name, status, confirmed_name in results:
-            # Modern bounding box colors
             if status == "Confirming":
-                color = (234, 126, 102)  # Coral
+                color = (234, 126, 102)
                 thickness = 2
             elif status == "Recognized":
-                color = (129, 230, 217)  # Teal
+                color = (129, 230, 217)
                 thickness = 3
                 if confirmed_name not in self.attendance_list:
                     now_dt = datetime.now()
@@ -828,26 +1510,39 @@ class MainWindow(QMainWindow):
                     self.add_attendance_card(confirmed_name, time_only, session, date_only)
                     self.show_success_status(confirmed_name)
                     self.update_stats()
-                    self.play_success_sound()
             elif status == "Checked-in":
-                color = (94, 172, 86)  # Green
+                color = (94, 172, 86)
                 thickness = 2
             else:
                 color = (208, 135, 112)
                 thickness = 2
 
-            # Draw rounded rectangle effect
             cv2.rectangle(frame_to_draw, (left, top), (right, bottom), color, thickness)
             
-            # Draw name with background
-            label_size = cv2.getTextSize(display_name, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
-            cv2.rectangle(frame_to_draw, 
-                         (left, top - label_size[1] - 10),
-                         (left + label_size[0] + 10, top),
+            corner_length = 20
+            cv2.line(frame_to_draw, (left, top), (left + corner_length, top), color, 3)
+            cv2.line(frame_to_draw, (left, top), (left, top + corner_length), color, 3)
+            cv2.line(frame_to_draw, (right, top), (right - corner_length, top), color, 3)
+            cv2.line(frame_to_draw, (right, top), (right, top + corner_length), color, 3)
+            cv2.line(frame_to_draw, (left, bottom), (left + corner_length, bottom), color, 3)
+            cv2.line(frame_to_draw, (left, bottom), (left, bottom - corner_length), color, 3)
+            cv2.line(frame_to_draw, (right, bottom), (right - corner_length, bottom), color, 3)
+            cv2.line(frame_to_draw, (right, bottom), (right, bottom - corner_length), color, 3)
+            
+            label_size = cv2.getTextSize(display_name, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)[0]
+            label_x = left
+            label_y = top - 12
+            
+            overlay = frame_to_draw.copy()
+            cv2.rectangle(overlay,
+                         (label_x - 5, label_y - label_size[1] - 10),
+                         (label_x + label_size[0] + 10, label_y + 5),
                          color, -1)
-            cv2.putText(frame_to_draw, display_name, 
-                       (left + 5, top - 5),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            cv2.addWeighted(overlay, 0.7, frame_to_draw, 0.3, 0, frame_to_draw)
+            
+            cv2.putText(frame_to_draw, display_name,
+                       (label_x, label_y),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         h, w, ch = frame_to_draw.shape
         final_image = QImage(frame_to_draw.data, w, h, ch * w, QImage.Format_BGR888)
@@ -860,14 +1555,13 @@ class MainWindow(QMainWindow):
         ))
 
     def add_attendance_card(self, name, time, session, date=None):
-        card = AttendanceCard(name, time, session)
+        card = ModernAttendanceCard(name, time, session)
         card.edit_clicked.connect(self.edit_attendee)
         card.delete_clicked.connect(self.delete_attendee)
         card._att_datetime = time
         card._att_date = date
         self.attendance_layout.insertWidget(0, card)
         
-        # Save to CSV
         try:
             attendance_date = date if date else datetime.now().strftime("%Y-%m-%d")
             row_df = pd.DataFrame([{
@@ -877,30 +1571,25 @@ class MainWindow(QMainWindow):
                 "Session": session
             }])
             write_header = not os.path.exists(self.master_file)
-            row_df.to_csv(self.master_file, mode='a', header=write_header, 
+            row_df.to_csv(self.master_file, mode='a', header=write_header,
                          index=False, encoding="utf-8-sig")
         except Exception as e:
             print("Failed to save:", e)
 
     def show_success_status(self, name: str):
+        if not self.settings.get('toast_enabled', True):
+            return
+            
         self.success_overlay.setText(f"✅ {name} - Check-in successful!")
         
-        # Center the overlay
         vw = self.video_label.width()
-        vh = self.video_label.height()
         sw = self.success_overlay.width()
-        sh = self.success_overlay.height()
         x = (vw - sw) // 2
-        y = 20
-        self.success_overlay.move(x, y)
+        self.success_overlay.move(max(0, x), 20)
         self.success_overlay.show()
         self.success_overlay.raise_()
         
-        QTimer.singleShot(2000, self.success_overlay.hide)
-
-    def play_success_sound(self):
-        # Có thể thêm sound notification ở đây
-        pass
+        QTimer.singleShot(2500, self.success_overlay.hide)
 
     def filter_attendance(self, text):
         for i in range(self.attendance_layout.count()):
@@ -909,7 +1598,7 @@ class MainWindow(QMainWindow):
                 widget.setVisible(text.lower() in widget.name.lower())
 
     def add_new_person(self):
-        text, ok = QInputDialog.getText(self, "Add New Person", 
+        text, ok = QInputDialog.getText(self, "Add New Person",
                                         "Enter person's name:",
                                         QLineEdit.Normal)
         if ok and text:
@@ -925,7 +1614,7 @@ class MainWindow(QMainWindow):
         self.init_worker()
         self.worker.reload_data_flag = True
         self.update_stats()
-        QMessageBox.information(self, "Success", 
+        QMessageBox.information(self, "Success",
                                f"Successfully added {self.current_person_name}!")
         self.current_person_name = ""
 
@@ -935,7 +1624,6 @@ class MainWindow(QMainWindow):
             new_name = new_name.strip()
             if name in self.attendance_list:
                 self.attendance_list[new_name] = self.attendance_list.pop(name)
-            # Update UI
             for i in range(self.attendance_layout.count()):
                 widget = self.attendance_layout.itemAt(i).widget()
                 if widget and getattr(widget, 'name', None) == name:
@@ -943,7 +1631,7 @@ class MainWindow(QMainWindow):
                     break
 
     def delete_attendee(self, name):
-        reply = QMessageBox.question(self, "Delete", 
+        reply = QMessageBox.question(self, "Delete",
                                     f"Remove {name} from today's attendance?",
                                     QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
@@ -956,7 +1644,7 @@ class MainWindow(QMainWindow):
             self.update_stats()
 
     def reset_attendance(self):
-        reply = QMessageBox.question(self, "Reset", 
+        reply = QMessageBox.question(self, "Reset",
                                     "Clear today's attendance list?",
                                     QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
@@ -979,7 +1667,7 @@ class MainWindow(QMainWindow):
             
         now = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Export Attendance", 
+            self, "Export Attendance",
             f"attendance_{now}.xlsx",
             "Excel Files (*.xlsx);;CSV Files (*.csv)")
         
@@ -1014,20 +1702,30 @@ class MainWindow(QMainWindow):
             return
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("Attendance History")
-        dlg.setStyleSheet(MODERN_STYLE)
-        dlg.resize(1000, 600)
+        dlg.setWindowTitle("📋 Attendance History")
+        dlg.setStyleSheet(MODERN_STYLE + "QDialog { background: #1a1a2e; }")
+        dlg.resize(1000, 650)
         
         layout = QVBoxLayout(dlg)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(25, 25, 25, 25)
         
-        # Header
-        header = QLabel("📊 Attendance History")
-        header.setStyleSheet("font-size: 24px; font-weight: bold; color: #1e293b; margin-bottom: 16px;")
+        header = QLabel("📋 Attendance History")
+        header.setStyleSheet("font-size: 26px; font-weight: bold; color: white; margin-bottom: 16px;")
         layout.addWidget(header)
         
-        # Table
         table = QTableWidget()
+        table.setStyleSheet("""
+            QTableWidget {
+                background: rgba(255,255,255,0.05);
+                border-radius: 12px;
+                gridline-color: rgba(255,255,255,0.1);
+            }
+            QTableWidget::item { color: white; padding: 12px; }
+            QHeaderView::section {
+                background: rgba(102, 126, 234, 0.3);
+                color: white; font-weight: 600; padding: 14px; border: none;
+            }
+        """)
         table.setColumnCount(len(df.columns))
         table.setHorizontalHeaderLabels(list(df.columns))
         table.setRowCount(len(df))
@@ -1037,11 +1735,10 @@ class MainWindow(QMainWindow):
                 item = QTableWidgetItem(str(df.iloc[r, c]))
                 table.setItem(r, c, item)
         
-        table.resizeColumnsToContents()
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.setSelectionBehavior(QTableWidget.SelectRows)
         layout.addWidget(table)
         
-        # Buttons
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
         
@@ -1050,7 +1747,7 @@ class MainWindow(QMainWindow):
         btn_delete.clicked.connect(lambda: self.delete_history_rows(table, dlg))
         
         btn_close = QPushButton("Close")
-        btn_close.setObjectName("btn_secondary")
+        btn_close.setObjectName("btn_glass")
         btn_close.clicked.connect(dlg.close)
         
         btn_layout.addWidget(btn_delete)
@@ -1064,7 +1761,7 @@ class MainWindow(QMainWindow):
         if not selected:
             return
         
-        if QMessageBox.question(dialog, "Delete", 
+        if QMessageBox.question(dialog, "Delete",
                                f"Delete {len(selected)} records?") == QMessageBox.Yes:
             rows = sorted([s.row() for s in selected], reverse=True)
             try:
@@ -1081,19 +1778,19 @@ class MainWindow(QMainWindow):
         if not os.path.exists(known_dir):
             os.makedirs(known_dir)
         
-        members = sorted([d for d in os.listdir(known_dir) 
+        members = sorted([d for d in os.listdir(known_dir)
                          if os.path.isdir(os.path.join(known_dir, d))])
         
         dlg = QDialog(self)
-        dlg.setWindowTitle("Members")
-        dlg.setStyleSheet(MODERN_STYLE)
-        dlg.resize(500, 600)
+        dlg.setWindowTitle("👥 Members")
+        dlg.setStyleSheet(MODERN_STYLE + "QDialog { background: #1a1a2e; }")
+        dlg.resize(500, 650)
         
         layout = QVBoxLayout(dlg)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(25, 25, 25, 25)
         
         header = QLabel(f"👥 Members ({len(members)})")
-        header.setStyleSheet("font-size: 24px; font-weight: bold; color: #1e293b;")
+        header.setStyleSheet("font-size: 26px; font-weight: bold; color: white;")
         layout.addWidget(header)
         
         scroll = QScrollArea()
@@ -1101,34 +1798,51 @@ class MainWindow(QMainWindow):
         
         content = QWidget()
         content_layout = QVBoxLayout(content)
-        content_layout.setSpacing(8)
+        content_layout.setSpacing(10)
         
-        for name in members:
+        colors = ["#667eea", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+        
+        for idx, name in enumerate(members):
+            color = colors[idx % len(colors)]
             card = QFrame()
-            card.setStyleSheet("""
-                QFrame {
-                    background: white;
-                    border-radius: 12px;
-                    border: 1px solid #e2e8f0;
-                    padding: 12px;
-                }
-                QFrame:hover {
-                    border-color: #667eea;
-                }
+            card.setStyleSheet(f"""
+                QFrame {{
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 14px;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                }}
+                QFrame:hover {{
+                    background: rgba(255, 255, 255, 0.08);
+                    border-color: {color}80;
+                }}
             """)
             card_layout = QHBoxLayout(card)
+            card_layout.setContentsMargins(16, 12, 16, 12)
             
-            avatar = QLabel("👤")
-            avatar.setStyleSheet("font-size: 24px;")
+            avatar = QLabel(name[0].upper())
+            avatar.setAlignment(Qt.AlignCenter)
+            avatar.setFixedSize(45, 45)
+            avatar.setStyleSheet(f"""
+                font-size: 18px; font-weight: 700; color: white;
+                background: {color}; border-radius: 22px;
+            """)
             card_layout.addWidget(avatar)
             
             name_label = QLabel(name)
-            name_label.setStyleSheet("font-size: 15px; font-weight: 600; color: #1e293b;")
+            name_label.setStyleSheet("font-size: 15px; font-weight: 600; color: white;")
             card_layout.addWidget(name_label, 1)
             
             btn_delete = QPushButton("🗑️")
-            btn_delete.setObjectName("btn_icon")
-            btn_delete.setFixedSize(36, 36)
+            btn_delete.setObjectName("btn_icon_dark")
+            btn_delete.setFixedSize(38, 38)
+            btn_delete.setStyleSheet("""
+                QPushButton {
+                    background: rgba(239, 68, 68, 0.15);
+                    color: #ef4444; border-radius: 10px;
+                    border: 1px solid rgba(239, 68, 68, 0.2);
+                }
+                QPushButton:hover { background: rgba(239, 68, 68, 0.25); }
+            """)
             btn_delete.clicked.connect(lambda _, n=name, c=card: self.delete_member(n, c, dlg))
             card_layout.addWidget(btn_delete)
             
@@ -1139,7 +1853,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(scroll)
         
         btn_close = QPushButton("Close")
-        btn_close.setObjectName("btn_secondary")
+        btn_close.setObjectName("btn_glass")
         btn_close.clicked.connect(dlg.close)
         layout.addWidget(btn_close)
         
@@ -1159,6 +1873,27 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 QMessageBox.warning(dialog, "Error", str(e))
 
+    def show_home(self):
+        pass
+    
+    def show_reports(self):
+        dlg = ReportDialog(self.master_file, self)
+        dlg.exec()
+    
+    def show_settings(self):
+        dlg = SettingsDialog(self.settings, self)
+        dlg.settings_changed.connect(self.apply_settings)
+        dlg.exec()
+    
+    def apply_settings(self, new_settings):
+        self.settings = new_settings
+        self.save_settings_to_file()
+        
+        if hasattr(self.cv_logic, 'TOLERANCE'):
+            self.cv_logic.TOLERANCE = new_settings.get('tolerance', 0.35)
+        if hasattr(self.cv_logic, 'CONFIRMATION_COUNT'):
+            self.cv_logic.CONFIRMATION_COUNT = new_settings.get('confirmation_count', 3)
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if hasattr(self, 'success_overlay') and hasattr(self, 'video_label'):
@@ -1171,6 +1906,7 @@ class MainWindow(QMainWindow):
         self.worker.stop()
         if hasattr(self, 'clock_timer'):
             self.clock_timer.stop()
+        self.save_settings_to_file()
         event.accept()
 
 
