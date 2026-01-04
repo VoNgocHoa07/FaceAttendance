@@ -1910,12 +1910,158 @@ class MainWindow(QMainWindow):
         event.accept()
 
 
+class SplashScreen(QWidget):
+    """Màn hình Splash Screen khi khởi động app"""
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setFixedSize(500, 350)
+        
+        # Center on screen
+        screen = QApplication.primaryScreen().geometry()
+        self.move((screen.width() - 500) // 2, (screen.height() - 350) // 2)
+        
+        self.init_ui()
+        
+    def init_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Main container with gradient background
+        container = QFrame()
+        container.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #1a1a2e, stop:0.5 #16213e, stop:1 #0f3460);
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        """)
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(40, 40, 40, 40)
+        container_layout.setSpacing(20)
+        container_layout.setAlignment(Qt.AlignCenter)
+        
+        # Logo/Icon
+        logo = QLabel("🎯")
+        logo.setStyleSheet("font-size: 64px; background: transparent;")
+        logo.setAlignment(Qt.AlignCenter)
+        container_layout.addWidget(logo)
+        
+        # App name
+        title = QLabel("Face Attendance")
+        title.setStyleSheet("""
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            background: transparent;
+        """)
+        title.setAlignment(Qt.AlignCenter)
+        container_layout.addWidget(title)
+        
+        # Subtitle
+        subtitle = QLabel("Real-time Face Recognition System")
+        subtitle.setStyleSheet("""
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            background: transparent;
+        """)
+        subtitle.setAlignment(Qt.AlignCenter)
+        container_layout.addWidget(subtitle)
+        
+        container_layout.addSpacing(20)
+        
+        # Progress bar
+        self.progress = QProgressBar()
+        self.progress.setFixedHeight(6)
+        self.progress.setTextVisible(False)
+        self.progress.setStyleSheet("""
+            QProgressBar {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 3px;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #667eea, stop:1 #764ba2);
+                border-radius: 3px;
+            }
+        """)
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        container_layout.addWidget(self.progress)
+        
+        # Status label
+        self.status_label = QLabel("Initializing...")
+        self.status_label.setStyleSheet("""
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            background: transparent;
+        """)
+        self.status_label.setAlignment(Qt.AlignCenter)
+        container_layout.addWidget(self.status_label)
+        
+        # Version
+        version = QLabel("v1.0.0")
+        version.setStyleSheet("""
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+            background: transparent;
+        """)
+        version.setAlignment(Qt.AlignCenter)
+        container_layout.addWidget(version)
+        
+        layout.addWidget(container)
+        
+        # Add shadow effect
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(50)
+        shadow.setXOffset(0)
+        shadow.setYOffset(10)
+        shadow.setColor(QColor(0, 0, 0, 150))
+        container.setGraphicsEffect(shadow)
+    
+    def update_progress(self, value, status=""):
+        self.progress.setValue(value)
+        if status:
+            self.status_label.setText(status)
+
+
+class AppLoader(QThread):
+    """Thread để load app và cập nhật splash screen"""
+    progress_updated = Signal(int, str)
+    finished_loading = Signal()
+    
+    def run(self):
+        steps = [
+            (10, "Loading configuration..."),
+            (25, "Initializing camera..."),
+            (40, "Loading face recognition models..."),
+            (60, "Setting up UI components..."),
+            (80, "Loading known faces..."),
+            (95, "Finalizing..."),
+            (100, "Ready!"),
+        ]
+        
+        for progress, status in steps:
+            self.progress_updated.emit(progress, status)
+            time.sleep(0.3)
+        
+        time.sleep(0.5)
+        self.finished_loading.emit()
+
+
 if __name__ == "__main__":
     import traceback
     try:
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
         
+        # Show splash screen
+        splash = SplashScreen()
+        splash.show()
+        
+        # Get screen geometry
         screen = app.primaryScreen()
         if screen:
             geometry = screen.geometry()
@@ -1925,8 +2071,21 @@ if __name__ == "__main__":
                 def height(self): return 900
             geometry = DefaultGeometry()
         
-        window = MainWindow(geometry)
-        window.show()
+        # Main window (created but not shown yet)
+        main_window = None
+        
+        def on_loading_finished():
+            global main_window
+            splash.close()
+            main_window = MainWindow(geometry)
+            main_window.show()
+        
+        # Start loader thread
+        loader = AppLoader()
+        loader.progress_updated.connect(splash.update_progress)
+        loader.finished_loading.connect(on_loading_finished)
+        loader.start()
+        
         sys.exit(app.exec())
     except Exception as e:
         traceback.print_exc()

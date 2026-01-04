@@ -5,199 +5,175 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
 jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install numpy==1.26.4 pandas==2.1.4 opencv-python-headless==4.9.0.80 PySide6==6.6.1 openpyxl==3.1.2 mediapipe==0.10.9 dlib==19.24.2 face_recognition==1.3.0 pyinstaller
-      
+          pip install cmake
+          pip install -r requirements.txt
+
       - name: Build with PyInstaller
         run: |
-          pyinstaller --noconfirm --onedir --windowed `
-            --name "FaceAttendance" `
-            --add-data "Logo;Logo" `
-            --hidden-import "PySide6.QtCore" `
-            --hidden-import "PySide6.QtGui" `
-            --hidden-import "PySide6.QtWidgets" `
-            --hidden-import "cv2" `
-            --hidden-import "mediapipe" `
-            --hidden-import "face_recognition" `
-            --hidden-import "face_recognition_models" `
-            --hidden-import "dlib" `
-            --hidden-import "numpy" `
-            --hidden-import "pandas" `
-            --hidden-import "openpyxl" `
-            --collect-all "mediapipe" `
-            --collect-all "face_recognition" `
-            --collect-all "face_recognition_models" `
-            app_main.py
-      
-      - name: Create directories
+          pyinstaller FaceAttendance.spec
+
+      - name: Create ZIP
         run: |
-          New-Item -ItemType Directory -Force -Path "dist\FaceAttendance\known_faces"
-          New-Item -ItemType Directory -Force -Path "dist\FaceAttendance\attendance_records"
-      
-      - name: Zip Windows build
-        run: |
-          Compress-Archive -Path "dist\FaceAttendance\*" -DestinationPath "FaceAttendance_Windows.zip"
-      
+          Compress-Archive -Path dist/FaceAttendance.exe -DestinationPath FaceAttendance-Windows.zip
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FaceAttendance_Windows
-          path: FaceAttendance_Windows.zip
+          name: FaceAttendance-Windows
+          path: FaceAttendance-Windows.zip
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install cmake
+          brew install cmake
+          pip install -r requirements.txt
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller FaceAttendance.spec
+
+      - name: Create DMG
+        run: |
+          mkdir -p dmg_contents
+          cp -R dist/FaceAttendance.app dmg_contents/ 2>/dev/null || cp dist/FaceAttendance dmg_contents/
+          hdiutil create -volname "FaceAttendance" -srcfolder dmg_contents -ov -format UDZO FaceAttendance-macOS.dmg
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FaceAttendance-macOS
+          path: FaceAttendance-macOS.dmg
 
   build-linux:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libxcb-xinerama0 libxcb-cursor0 libgl1-mesa-glx \
-            libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-            libxcb-render-util0 libegl1 libxcb-shape0 libopenblas-dev liblapack-dev
-      
+          sudo apt-get install -y cmake build-essential libgl1-mesa-glx libglib2.0-0 \
+            libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
+            libxcb-cursor0 libegl1 libxcb-xfixes0
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install numpy==1.26.4 pandas==2.1.4 opencv-python-headless==4.9.0.80 PySide6==6.6.1 openpyxl==3.1.2 mediapipe==0.10.9 dlib==19.24.2 face_recognition==1.3.0 pyinstaller
-      
+          pip install cmake
+          pip install -r requirements.txt
+
       - name: Build with PyInstaller
         run: |
-          pyinstaller --noconfirm --onedir \
-            --name "FaceAttendance" \
-            --add-data "Logo:Logo" \
-            --hidden-import "PySide6.QtCore" \
-            --hidden-import "PySide6.QtGui" \
-            --hidden-import "PySide6.QtWidgets" \
-            --hidden-import "cv2" \
-            --hidden-import "mediapipe" \
-            --hidden-import "face_recognition" \
-            --hidden-import "face_recognition_models" \
-            --hidden-import "dlib" \
-            --hidden-import "numpy" \
-            --hidden-import "pandas" \
-            --hidden-import "openpyxl" \
-            --collect-all "mediapipe" \
-            --collect-all "face_recognition" \
-            --collect-all "face_recognition_models" \
-            app_main.py
-      
-      - name: Create directories
-        run: |
-          mkdir -p dist/FaceAttendance/known_faces
-          mkdir -p dist/FaceAttendance/attendance_records
-          chmod +x dist/FaceAttendance/FaceAttendance
-      
-      - name: Tar Linux build
+          pyinstaller FaceAttendance.spec
+
+      - name: Create tar.gz
         run: |
           cd dist
-          tar -czvf ../FaceAttendance_Linux.tar.gz FaceAttendance/
-      
+          tar -czvf ../FaceAttendance-Linux.tar.gz FaceAttendance
+          cd ..
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: FaceAttendance_Linux
-          path: FaceAttendance_Linux.tar.gz
-
-  build-macos:
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install numpy==1.26.4 pandas==2.1.4 opencv-python-headless==4.9.0.80 PySide6==6.6.1 openpyxl==3.1.2 mediapipe==0.10.9 dlib==19.24.2 face_recognition==1.3.0 pyinstaller
-      
-      - name: Build with PyInstaller
-        run: |
-          pyinstaller --noconfirm --onedir --windowed \
-            --name "FaceAttendance" \
-            --add-data "Logo:Logo" \
-            --hidden-import "PySide6.QtCore" \
-            --hidden-import "PySide6.QtGui" \
-            --hidden-import "PySide6.QtWidgets" \
-            --hidden-import "cv2" \
-            --hidden-import "mediapipe" \
-            --hidden-import "face_recognition" \
-            --hidden-import "face_recognition_models" \
-            --hidden-import "dlib" \
-            --hidden-import "numpy" \
-            --hidden-import "pandas" \
-            --hidden-import "openpyxl" \
-            --collect-all "mediapipe" \
-            --collect-all "face_recognition" \
-            --collect-all "face_recognition_models" \
-            app_main.py
-      
-      - name: Create directories
-        run: |
-          mkdir -p "dist/FaceAttendance.app/Contents/MacOS/known_faces"
-          mkdir -p "dist/FaceAttendance.app/Contents/MacOS/attendance_records"
-      
-      - name: Zip macOS build
-        run: |
-          cd dist
-          zip -r ../FaceAttendance_macOS.zip FaceAttendance.app/
-      
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: FaceAttendance_macOS
-          path: FaceAttendance_macOS.zip
+          name: FaceAttendance-Linux
+          path: FaceAttendance-Linux.tar.gz
 
   release:
-    needs: [build-windows, build-linux, build-macos]
+    needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download Windows artifact
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: FaceAttendance_Windows
-      
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: FaceAttendance_Linux
-      
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: FaceAttendance_macOS
-      
+          path: artifacts
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Face Attendance ${{ steps.version.outputs.version }}
+          body: |
+            ## 🎉 Face Recognition Attendance System ${{ steps.version.outputs.version }}
+            
+            ### Downloads
+            - **Windows**: `FaceAttendance-Windows.zip` - Extract and run `FaceAttendance.exe`
+            - **macOS**: `FaceAttendance-macOS.dmg` - Mount and drag to Applications
+            - **Linux**: `FaceAttendance-Linux.tar.gz` - Extract and run `./FaceAttendance`
+            
+            ### Features
+            - Real-time face recognition attendance
+            - Modern dark theme UI
+            - Export to Excel/CSV
+            - Attendance reports and analytics
+            - Multi-session support (Morning/Afternoon/Evening)
+            
+            ### Requirements
+            - Camera/Webcam required
+            - Windows 10+, macOS 10.15+, or Ubuntu 20.04+
+            
+            ### First Run
+            1. Download the appropriate file for your OS
+            2. Extract/Install the application
+            3. Grant camera permissions when prompted
+            4. Add faces using the "Add Person" button
+            5. Start taking attendance!
+          draft: false
+          prerelease: false
           files: |
-            FaceAttendance_Windows.zip
-            FaceAttendance_Linux.tar.gz
-            FaceAttendance_macOS.zip
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            artifacts/FaceAttendance-Windows/FaceAttendance-Windows.zip
+            artifacts/FaceAttendance-macOS/FaceAttendance-macOS.dmg
+            artifacts/FaceAttendance-Linux/FaceAttendance-Linux.tar.gz
