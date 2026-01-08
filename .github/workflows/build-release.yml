@@ -27,22 +27,11 @@ jobs:
         with:
           path: ~\AppData\Local\pip\Cache
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          
-      - name: Install Visual C++ Build Tools
-        run: |
-          choco install visualstudio2022-workload-vctools -y
-        shell: cmd
-          
-      - name: Install CMake
-        run: |
-          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
-        shell: cmd
         
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          pip install cmake
-          pip install dlib --verbose
+          pip install https://github.com/z-mahmud22/Dlib_Windows_Python3.x/releases/download/v19.24.99/dlib-19.24.99-cp310-cp310-win_amd64.whl
           pip install -r requirements.txt
           pip install pyinstaller
           
@@ -92,7 +81,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          pip install cmake
           pip install dlib
           pip install -r requirements.txt
           pip install pyinstaller
@@ -104,7 +92,7 @@ jobs:
       - name: Create distribution
         run: |
           mkdir -p dist/FaceAttendance-macOS
-          cp -r dist/FaceAttendance.app dist/FaceAttendance-macOS/
+          cp -r dist/FaceAttendance.app dist/FaceAttendance-macOS/ || cp dist/FaceAttendance dist/FaceAttendance-macOS/
           mkdir -p dist/FaceAttendance-macOS/known_faces
           mkdir -p dist/FaceAttendance-macOS/attendance_records
           echo '{}' > dist/FaceAttendance-macOS/settings.json
@@ -139,14 +127,20 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake build-essential libopenblas-dev liblapack-dev
+          sudo apt-get install -y build-essential libopenblas-dev liblapack-dev
           sudo apt-get install -y libxcb-xinerama0 libxkbcommon-x11-0 libxcb-cursor0
           sudo apt-get install -y libegl1 libgl1-mesa-glx
+          
+      - name: Install CMake from official source
+        run: |
+          wget https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-linux-x86_64.sh
+          chmod +x cmake-3.28.1-linux-x86_64.sh
+          sudo ./cmake-3.28.1-linux-x86_64.sh --skip-license --prefix=/usr/local
+          echo "/usr/local/bin" >> $GITHUB_PATH
           
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          pip install cmake
           pip install dlib
           pip install -r requirements.txt
           pip install pyinstaller
